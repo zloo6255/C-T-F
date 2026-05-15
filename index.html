@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HACKR00MS CTF</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#080c0a; color:#ccffdd; font-family:'Courier New',monospace; }
+header { border-bottom:1px solid #00ff8822; padding:1.2rem 2rem; display:flex; justify-content:space-between; align-items:center; background:#0d1410; }
+.logo { font-size:22px; font-weight:900; color:#00ff88; letter-spacing:3px; }
+.logo small { display:block; font-size:11px; color:#557766; letter-spacing:4px; margin-top:2px; }
+nav { display:flex; border-bottom:1px solid #00ff8822; background:#0d1410; padding:0 2rem; }
+.tab { padding:0.7rem 1.5rem; font-size:11px; cursor:pointer; color:#557766; border-bottom:2px solid transparent; letter-spacing:2px; text-transform:uppercase; }
+.tab:hover { color:#00ff88; }
+.tab.active { color:#00ff88; border-bottom-color:#00ff88; }
+main { padding:2rem; max-width:1100px; margin:0 auto; }
+.section { display:none; }
+.section.active { display:block; }
+.stats { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; margin-bottom:2rem; }
+.stat { background:#0d1410; border:1px solid #00ff8822; padding:1.2rem; border-radius:4px; }
+.stat-label { font-size:11px; color:#557766; letter-spacing:2px; margin-bottom:6px; }
+.stat-value { font-size:26px; font-weight:700; color:#00ff88; }
+.rooms { display:grid; grid-template-columns:repeat(auto-fill,minmax(300px,1fr)); gap:1.2rem; }
+.room { background:#0d1410; border:1px solid #00ff8822; border-radius:4px; padding:1.5rem; cursor:pointer; transition:border-color 0.2s; position:relative; overflow:hidden; }
+.room::before { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:var(--dc,#00ff88); }
+.room:hover { border-color:#00ff8866; }
+.room-top { display:flex; justify-content:space-between; margin-bottom:0.8rem; }
+.room-title { font-size:14px; font-weight:700; color:#00ff88; }
+.badge { font-size:10px; padding:2px 8px; border:1px solid var(--dc,#00ff88); color:var(--dc,#00ff88); border-radius:2px; letter-spacing:1px; }
+.room-desc { font-size:12px; color:#557766; line-height:1.6; margin-bottom:1rem; }
+.tags { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:1rem; }
+.tag { font-size:10px; padding:2px 8px; background:#111a14; border:1px solid #00ff8822; border-radius:2px; color:#557766; }
+.room-foot { display:flex; justify-content:space-between; align-items:center; font-size:11px; }
+.pts { font-size:13px; font-weight:700; color:var(--dc,#00ff88); }
+.enter-btn { background:transparent; border:1px solid #00ff88; color:#00ff88; padding:5px 12px; font-family:monospace; font-size:11px; cursor:pointer; border-radius:2px; }
+.enter-btn:hover { background:#00ff8822; }
+.solved-tag { color:#00ff88; font-size:11px; letter-spacing:2px; }
+/* Modal */
+.overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:100; align-items:center; justify-content:center; }
+.overlay.open { display:flex; }
+.modal { background:#0d1410; border:1px solid #00ff8866; border-radius:4px; padding:2rem; width:min(620px,90vw); max-height:88vh; overflow-y:auto; position:relative; }
+.modal-title { font-size:16px; font-weight:700; color:#00ff88; margin-bottom:0.4rem; }
+.modal-desc { font-size:12px; color:#557766; margin-bottom:1.2rem; }
+.challenge { background:#080c0a; border:1px solid #00ff8822; border-radius:4px; padding:1.2rem; margin-bottom:1.2rem; }
+.challenge pre { font-size:11px; color:#ffaa00; white-space:pre-wrap; line-height:1.7; }
+.flag-row { display:flex; gap:8px; margin-bottom:6px; }
+.flag-in { flex:1; background:#080c0a; border:1px solid #00ff8822; color:#00ff88; font-family:monospace; font-size:13px; padding:0.6rem 1rem; border-radius:2px; outline:none; }
+.flag-in:focus { border-color:#00ff88; }
+.sub-btn { background:#00ff88; color:#080c0a; border:none; padding:0.6rem 1.4rem; font-family:monospace; font-size:11px; font-weight:700; cursor:pointer; border-radius:2px; letter-spacing:1px; }
+.sub-btn:hover { opacity:0.85; }
+.sub-btn:disabled { opacity:0.4; cursor:not-allowed; }
+.msg { font-size:12px; min-height:18px; padding:3px 0; }
+.ok { color:#00ff88; } .err { color:#ff3355; } .warn { color:#ffaa00; }
+.hint-btn { background:transparent; border:1px solid #00ff8844; color:#ffaa00; font-family:monospace; font-size:11px; padding:4px 10px; cursor:pointer; border-radius:2px; margin-top:0.8rem; }
+.hint-box { display:none; font-size:12px; color:#ffaa00; margin-top:6px; padding:8px; border-left:2px solid #ffaa00; background:#ffaa0008; }
+.close-btn { position:absolute; top:1rem; right:1rem; background:transparent; border:1px solid #00ff8822; color:#557766; width:28px; height:28px; cursor:pointer; border-radius:2px; font-size:14px; }
+.close-btn:hover { color:#ff3355; border-color:#ff3355; }
+/* Register */
+.field { margin-bottom:1.2rem; }
+.field label { display:block; font-size:11px; letter-spacing:2px; color:#557766; margin-bottom:6px; text-transform:uppercase; }
+.field input { width:100%; max-width:360px; background:#080c0a; border:1px solid #00ff8822; color:#00ff88; font-family:monospace; font-size:13px; padding:0.6rem 1rem; border-radius:2px; outline:none; }
+.field input:focus { border-color:#00ff88; }
+.reg-btn { background:#00ff88; color:#080c0a; border:none; padding:0.7rem 2rem; font-family:monospace; font-size:12px; font-weight:700; cursor:pointer; border-radius:2px; letter-spacing:2px; margin-top:4px; }
+/* Leaderboard */
+table { width:100%; border-collapse:collapse; font-size:13px; }
+th { text-align:left; padding:0.6rem 1rem; font-size:11px; letter-spacing:2px; color:#557766; border-bottom:1px solid #00ff8822; font-weight:400; }
+td { padding:0.8rem 1rem; border-bottom:1px solid #00ff8811; }
+tr:first-child td { color:#00ff88; }
+.dot { display:inline-block; width:7px; height:7px; border-radius:50%; background:#00ff88; animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.3} }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">HACKR00MS <small>capture the flag // find the flags</small></div>
+  <div style="font-size:12px;color:#557766"><span class="dot"></span> LIVE &nbsp;|&nbsp; <span id="hdr-player">GUEST</span></div>
+</header>
+<nav>
+  <div class="tab active" onclick="tab('rooms',this)">ROOMS</div>
+  <div class="tab" onclick="tab('scores',this)">SCOREBOARD</div>
+  <div class="tab" onclick="tab('register',this)">PROFIL</div>
+</nav>
+<main>
+
+<section class="section active" id="rooms">
+  <div class="stats">
+    <div class="stat"><div class="stat-label">Rooms</div><div class="stat-value" id="s-rooms">6</div></div>
+    <div class="stat"><div class="stat-label">Ton score</div><div class="stat-value" id="s-score">0</div></div>
+    <div class="stat"><div class="stat-label">Flags</div><div class="stat-value" id="s-flags">0</div></div>
+    <div class="stat"><div class="stat-label">Bloqués</div><div class="stat-value" id="s-blocked" style="color:#ff3355">0</div></div>
+  </div>
+  <div class="rooms" id="rooms-grid"></div>
+</section>
+
+<section class="section" id="scores">
+  <div style="font-size:11px;color:#557766;margin-bottom:1.5rem;letter-spacing:2px">SCOREBOARD — LIVE</div>
+  <table><thead><tr><th>#</th><th>Joueur</th><th>Flags</th><th>Score</th></tr></thead>
+  <tbody id="score-body"><tr><td colspan="4" style="color:#557766;font-size:12px">Chargement...</td></tr></tbody></table>
+</section>
+
+<section class="section" id="register">
+  <div style="font-size:11px;color:#557766;margin-bottom:1.5rem;letter-spacing:2px">CRÉER TON PROFIL</div>
+  <div class="field"><label>Pseudo / Handle</label><input id="reg-name" placeholder="0xTonHandle" maxlength="24"/></div>
+  <button class="reg-btn" onclick="register()">REJOINDRE</button>
+  <div class="msg" id="reg-msg" style="margin-top:8px"></div>
+</section>
+
+</main>
+
+<div class="overlay" id="overlay" onclick="closeOverlay(event)">
+  <div class="modal" id="modal">
+    <button class="close-btn" onclick="closeModal()">✕</button>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<script>
+const API = '';
+let state = {
+  pseudo: localStorage.getItem('ctf_pseudo') || '',
+  score: parseInt(localStorage.getItem('ctf_score') || '0'),
+  solved: JSON.parse(localStorage.getItem('ctf_solved') || '[]'),
+  blocked: 0,
+};
+let ROOMS = [];
+const attempts = {};
+const CHALLENGES = {
+  r01: { desc:'Un serveur web expose des infos sensibles dans ses headers HTTP. Récupère-les.', pre:`$ curl -I http://target-sim.local/admin\n\nHTTP/1.1 403 Forbidden\nServer: Apache/2.4.1\nX-Debug-Token: [TON FLAG ICI]\nContent-Type: text/html\n\n→ Le flag se cache dans les headers de réponse.`, hint:'curl -I et regarde bien X-Debug-Token' },
+  r02: { desc:'Un fichier .enc traîne sur un FTP anonyme. Le "chiffrement" est très basique.', pre:`$ ftp target.local\nAnonymous login ok\n$ get config.enc\n$ cat config.enc\nUmVwbGFjZSBwYXIgdG9uIGZsYWcgYmFzZTY0\n\n→ Décode ce base64 pour obtenir le flag.`, hint:'echo "..." | base64 -d dans ton terminal' },
+  r03: { desc:'Un panel admin vulnérable à une injection SQL classique. Bypass l\'authentification.', pre:`POST /admin/login HTTP/1.1\nusername=admin&password=test\n\n→ La requête SQL: SELECT * FROM users WHERE user='[INPUT]' AND pass='[INPUT]'\n→ Bypasse avec une injection classique pour récupérer le flag.`, hint:"username: ' OR '1'='1  /  password: ' OR '1'='1" },
+  r04: { desc:'Un binaire demande un password. Trouve-le en reverse engineering.', pre:`$ ./crackme.elf\nEnter password: ?\n\n$ strings crackme.elf\n... beaucoup de strings ...\n... cherche ce qui ressemble à une clé ...\n\n→ Utilise strings, ltrace, ou gdb pour trouver le flag.`, hint:'strings crackme.elf | grep -i flag' },
+  r05: { desc:'Une image PNG contient quelque chose de caché. Analyse-la correctement.', pre:`$ file innocent.png\nPNG image data, 256x256, 8-bit/color RGB\n\n$ binwalk innocent.png\n0x0      PNG image data\n0x15DC6  Zip archive data ← INTÉRESSANT\n\n→ Extrais les données cachées pour trouver le flag.`, hint:'binwalk -e innocent.png puis ls dans le dossier extrait' },
+  r06: { desc:'Tu as un shell www-data. Escalade tes privilèges jusqu\'à root et lis /root/flag.txt.', pre:`$ whoami\nwww-data\n\n$ find / -perm -4000 -type f 2>/dev/null\n/usr/bin/find\n/usr/local/bin/custom_backup  ← SUID custom !\n\n→ Exploite le SUID bit pour devenir root.\n→ Consulte GTFOBins pour des pistes.`, hint:'find . -exec /bin/sh -p \\; -quit  →  GTFOBins SUID find' },
+};
+
+function save() {
+  localStorage.setItem('ctf_pseudo', state.pseudo);
+  localStorage.setItem('ctf_score', state.score);
+  localStorage.setItem('ctf_solved', JSON.stringify(state.solved));
+}
+
+function updateStats() {
+  document.getElementById('s-score').textContent = state.score;
+  document.getElementById('s-flags').textContent = state.solved.length;
+  document.getElementById('s-blocked').textContent = state.blocked;
+  document.getElementById('hdr-player').textContent = state.pseudo || 'GUEST';
+}
+
+function tab(name, el) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(name).classList.add('active');
+  el.classList.add('active');
+  if (name === 'scores') loadScores();
+}
+
+async function loadRooms() {
+  try {
+    const r = await fetch(`${API}/api/rooms`);
+    ROOMS = await r.json();
+    renderRooms();
+  } catch(e) { console.error(e); }
+}
+
+const DIFF_COLORS = { EASY:'#00ff88', MEDIUM:'#ffaa00', HARD:'#ff6633', EXTREME:'#ff3355' };
+
+function renderRooms() {
+  const g = document.getElementById('rooms-grid');
+  g.innerHTML = ROOMS.map(r => {
+    const dc = DIFF_COLORS[r.diff] || '#00ff88';
+    const solved = state.solved.includes(r.id);
+    const ch = CHALLENGES[r.id] || {};
+    return `<div class="room" style="--dc:${dc}" onclick="openRoom('${r.id}')">
+      <div class="room-top"><div class="room-title">${r.title}</div><div class="badge">${r.diff}</div></div>
+      <div class="room-desc">${ch.desc || ''}</div>
+      <div class="room-foot">
+        <span class="pts">${r.points} pts</span>
+        ${solved ? '<span class="solved-tag">✓ SOLVED</span>' : `<button class="enter-btn" onclick="event.stopPropagation();openRoom('${r.id}')">ENTER →</button>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function openRoom(id) {
+  const room = ROOMS.find(r => r.id === id);
+  if (!room) return;
+  const ch = CHALLENGES[id] || {};
+  const solved = state.solved.includes(id);
+
+  // Récupère le flag unique si connecté
+  let flagHint = '';
+  if (state.pseudo && !solved) {
+    try {
+      const r = await fetch(`${API}/api/flag/${id}?pseudo=${encodeURIComponent(state.pseudo)}`);
+      const d = await r.json();
+      if (d.flag) flagHint = d.flag;
+    } catch(e) {}
+  }
+
+  document.getElementById('modal-body').innerHTML = `
+    <div class="modal-title">${room.title}</div>
+    <div class="modal-desc">${ch.desc || ''} — <strong style="color:#00ff88">${room.points} pts</strong></div>
+    <div class="challenge"><pre>${ch.pre || ''}</pre></div>
+    ${solved ? '<div class="msg ok" style="font-size:14px">✓ FLAG VALIDÉ — Room terminée !</div>' : `
+      ${flagHint ? `<div style="font-size:11px;color:#557766;margin-bottom:8px">Ton flag unique : <code style="color:#00ff88">${flagHint}</code></div>` : (!state.pseudo ? '<div class="msg warn">Crée un profil pour recevoir ton flag unique.</div>' : '')}
+      <div class="flag-row">
+        <input class="flag-in" id="fi-${id}" placeholder="FLAG{...}" />
+        <button class="sub-btn" onclick="submitFlag('${id}')">SUBMIT</button>
+      </div>
+      <div class="msg" id="fm-${id}"></div>
+      <button class="hint-btn" onclick="toggleHint('${id}')">💡 INDICE</button>
+      <div class="hint-box" id="hb-${id}">${ch.hint || ''}</div>
+    `}
+  `;
+  document.getElementById('overlay').classList.add('open');
+}
+
+function toggleHint(id) {
+  const h = document.getElementById(`hb-${id}`);
+  h.style.display = h.style.display === 'block' ? 'none' : 'block';
+}
+
+async function submitFlag(id) {
+  if (!state.pseudo) {
+    document.getElementById(`fm-${id}`).className = 'msg warn';
+    document.getElementById(`fm-${id}`).textContent = 'Crée un profil d\'abord !';
+    return;
+  }
+  const flag = document.getElementById(`fi-${id}`).value.trim();
+  if (!flag) return;
+
+  // Rate limit local
+  const key = id;
+  if (!attempts[key]) attempts[key] = [];
+  const now = Date.now();
+  attempts[key] = attempts[key].filter(t => now - t < 60000);
+  if (attempts[key].length >= 5) {
+    state.blocked++;
+    updateStats();
+    document.getElementById(`fm-${id}`).className = 'msg warn';
+    document.getElementById(`fm-${id}`).textContent = '⚠ Rate limit local — attends 1 minute.';
+    return;
+  }
+  attempts[key].push(now);
+
+  try {
+    const r = await fetch(`${API}/api/submit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pseudo: state.pseudo, roomId: id, flag }),
+    });
+    const d = await r.json();
+    const msg = document.getElementById(`fm-${id}`);
+    if (d.ok) {
+      msg.className = 'msg ok';
+      msg.textContent = `✓ FLAG CORRECT — +${d.points} pts !`;
+      state.solved.push(id);
+      state.score = d.totalScore;
+      save(); updateStats(); renderRooms();
+    } else {
+      msg.className = 'msg err';
+      msg.textContent = d.error || 'Flag incorrect.';
+      if (r.status === 429) state.blocked++;
+      updateStats();
+    }
+  } catch(e) {
+    document.getElementById(`fm-${id}`).textContent = 'Erreur réseau.';
+  }
+}
+
+async function register() {
+  const pseudo = document.getElementById('reg-name').value.trim();
+  const msg = document.getElementById('reg-msg');
+  if (!pseudo) return;
+  try {
+    const r = await fetch(`${API}/api/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pseudo }),
+    });
+    const d = await r.json();
+    if (d.ok) {
+      state.pseudo = pseudo;
+      save(); updateStats();
+      msg.className = 'msg ok';
+      msg.textContent = `✓ Bienvenue ${pseudo} ! Go hacker.`;
+    } else {
+      msg.className = 'msg err';
+      msg.textContent = d.error || 'Erreur.';
+    }
+  } catch(e) { msg.textContent = 'Erreur réseau.'; }
+}
+
+async function loadScores() {
+  try {
+    const r = await fetch(`${API}/api/scores`);
+    const data = await r.json();
+    const tbody = document.getElementById('score-body');
+    if (!data.length) { tbody.innerHTML = '<tr><td colspan="4" style="color:#557766">Aucun joueur encore.</td></tr>'; return; }
+    tbody.innerHTML = data.map((p, i) =>
+      `<tr><td style="color:#557766;font-family:monospace">${String(i+1).padStart(2,'0')}</td><td>${p.pseudo}</td><td>${p.solved}</td><td style="color:#00ff88;font-weight:700">${p.score}</td></tr>`
+    ).join('');
+  } catch(e) {}
+}
+
+function closeModal() { document.getElementById('overlay').classList.remove('open'); }
+function closeOverlay(e) { if (e.target.id === 'overlay') closeModal(); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+loadRooms();
+updateStats();
+</script>
+</body>
+</html>
