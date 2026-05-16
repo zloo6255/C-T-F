@@ -132,6 +132,9 @@ app.use((req, res, next) => {
 
 // Serve frontend
 app.use(express.static(path.join(__dirname, 'public')));
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 // ─── HONEYPOTS ───────────────────────────────────────────────────────────────
 const fakePaths = ['/admin', '/admin/', '/wp-admin', '/login', '/.env', '/config', '/api/v1/secret', '/backup', '/phpmyadmin', '/shell', '/cmd'];
