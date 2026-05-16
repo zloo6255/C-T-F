@@ -8,8 +8,7 @@ const path = require('path');
 
 const app = express();
 app.set('trust proxy', 1);
-const PORT = process.env.PORT || 3000;
-
+const SECRET = process.env.FLAG_SECRET || 'change-this-secret-in-railway-env';
 // ─── IN-MEMORY STORES ────────────────────────────────────────────────────────
 const players = {};       // { pseudo: { score, solved[], createdAt } }
 const banList = {};       // { ip_hash: { until, strikes } }
