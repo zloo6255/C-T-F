@@ -261,4 +261,5 @@ app.use((req, res) => {
 });
 
 // ─── START ────────────────────────────────────────────────────────────────────
-app.listen(PORT, () => console.log(`CTF server running on port ${PORT}`));
+const port = process.env.PORT || 3000;
+app.listen(port, '0.0.0.0', () => console.log(`CTF server running on port ${port}`));
